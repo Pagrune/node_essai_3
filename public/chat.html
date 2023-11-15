@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Chat</title>
+    <!-- Intégrer socket.io avant d'utiliser le script -->
+    <script src="http://localhost:4000/socket.io/socket.io.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div id="chat">
+        <div id="message-container"></div>
+        <input id="message-input" placeholder='Message...'>
+        <button id="send-button" class='btn btn-primary'>Send Message</button>
+    </div>
+
+    <script>
+        // Se connecter au serveur Socket.IO après avoir inclus le script socket.io.js
+        const socket = io.connect('http://localhost:4000');
+
+        // Récupérer les éléments DOM
+        const messageContainer = document.getElementById('message-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Écouter l'événement 'connection' côté client
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        // Écouter l'événement 'disconnect' côté client
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+
+        // Fonction pour ajouter un message à la div de messages
+        function addMessageToContainer(message) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageContainer.appendChild(messageElement);
+        }
+
+        // Fonction pour envoyer un message
+        function sendMessage() {
+            const message = messageInput.value;
+            if (message.trim() !== '') {
+                // Envoyer le message au serveur
+                socket.emit('chatMessage', message);
+                // Ajouter le message à la div de messages
+                addMessageToContainer(`You: ${message}`);
+                // Effacer le champ de saisie
+                messageInput.value = '';
+            }
+        }
+
+        // Associer la fonction sendMessage à l'événement click du bouton
+        sendButton.addEventListener('click', sendMessage);
+
+        // Gérer les messages reçus du serveur
+        socket.on('chatMessage', (message) => {
+            // Ajouter le message à la div de messages
+            addMessageToContainer(`Server: ${message}`);
+        });
+    </script>
+</body>
+</html>
