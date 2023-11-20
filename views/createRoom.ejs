@@ -1,0 +1,39 @@
+<%- include('layout.ejs'); %>
+<body>
+    <div id="room-form">
+        <h2>Create or Join a Room</h2>
+        <form id="create-room-form">
+            <label for="room-name">Room Name:</label>
+            <input type="text" id="room-name" name="room-name" required>
+            <button type="submit">Join Room</button>
+        </form>
+    </div>
+
+    <!-- Inclure la bibliothèque Socket.IO depuis le CDN -->
+    <script src="http://localhost:4111/socket.io/socket.io.js"></script>
+    
+    <!-- Inclure ton script JavaScript pour gérer le chat avec Socket.IO -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io.connect('http://localhost:4111');
+
+            const createRoomForm = document.getElementById('create-room-form');
+
+            createRoomForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                const room = document.getElementById('room-name').value;
+
+                // Émettre un événement 'joinRoom' avec le nom de la room
+                socket.emit('joinRoom', { room });
+
+                // Écouter l'événement 'roomJoined' côté client
+                socket.on('roomJoined', (data) => {
+                    // Rediriger vers la page de chat après avoir rejoint la room
+                    window.location.href = `/chat?room=${data.room}`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

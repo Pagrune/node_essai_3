@@ -7,6 +7,9 @@ dotenv.config();
 const passport = require("passport");
 const { loginCheck } = require("./auth/passport");
 loginCheck(passport);
+const { createRoom } = require('./controllers/messageController');
+
+const Message = require('./models/Message');
 
 const http = require('http');
 //const socketIo = require('socket.io');
@@ -44,28 +47,50 @@ app.use(passport.initialize());
 app.use(passport.session());
 //Routes
 app.use("/", require("./routes/login"));
+app.use('/messages', require('./routes/messageRoute'));
 
-//add socket-io using express and server
-// const io = new Server(server, {
-//     cors: {
-//       methods: ['GET', 'POST'],
-//     },
-//   });
- 
 io.on('connection', (socket) => {
   console.log('User connected');
 
-  // Écouter l'événement 'chatMessage' côté serveur
-  socket.on('chatMessage', (message) => {
-      // Renvoyer le message à tous les clients connectés (y compris l'expéditeur)
-      io.emit('chatMessage', message);
-      console.log({ message });
-  });
+  // Écouter l'événement 'joinRoom' côté serveur
+  socket.on('joinRoom', async (roomInfo) => {
+    try {
+      const { room } = roomInfo;
+      // console.log(roomInfo);
+      const roomId = await createRoom(room);
+      console.log(roomId);
 
-  socket.on('disconnect', () => {
-      console.log('User disconnected');
+      // Joindre la room spécifiée
+      socket.join(roomId);
+
+      // Émettre un événement pour indiquer que la room a été rejointe avec succès
+      socket.emit('roomJoined', { room: roomId });
+
+      // Écouter l'événement 'chatMessage' côté serveur
+      socket.on('chatMessage', async (data) => {
+        try {
+          // Enregistrer le message dans la base de données
+          const { user, content } = data;
+          const newMessage = new Message({ room: roomId, user, content });
+          await newMessage.save();
+
+          // Renvoyer le message à tous les clients connectés dans la room
+          io.to(roomId).emit('chatMessage', newMessage);
+        } catch (error) {
+          console.error(error);
+        }
+      });
+
+      // Écouter l'événement 'disconnect' côté serveur
+      socket.on('disconnect', () => {
+        console.log('User disconnected');
+      });
+    } catch (error) {
+      console.error('Error creating/joining conversation:', error);
+    }
   });
 });
+
 
 
 const PORT = process.env.PORT || 4111;

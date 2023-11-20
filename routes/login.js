@@ -1,19 +1,22 @@
 //js
 const express = require('express');
-const {registerView, loginView, registerUser, loginUser } = require('../controllers/loginController');
+const { registerView, loginView, registerUser, loginUser } = require('../controllers/loginController');
 const router = express.Router();
 const { protectRoute } = require("../auth/protect");
 const { dashboardView } = require("../controllers/dashboardController");
+const { messageView, createRoomView } = require("../controllers/messageController");
+
 
 // route to home page
 router.get('/', (req, res) => {
     res.render('home');
 });
 
-// route to chat from chat.ejs
-router.get('/chat', (req, res) => {
-    res.render('chat');
-});
+// route to chat from chat.ejs (protected route)
+router.get('/chat', protectRoute, messageView);
+
+// Exemple de rendu de la vue avec une variable user
+router.get('/createRoom', protectRoute, createRoomView);
 
 router.get('/register', registerView);
 router.get('/login', loginView);
@@ -31,13 +34,6 @@ router.get('/logout', (req, res) => {
 
 const path = require('path');
 
-// // Utilise le middleware protectRoute pour protéger la route "/chat"
-// router.get('/chat', protectRoute, (req, res) => {
-//     const options = {
-//         root: path.join(__dirname, '../public/')
-//     };
-//     res.sendFile('chat.html', options);
-// });
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
