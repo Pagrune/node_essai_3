@@ -13,7 +13,9 @@ router.get('/', (req, res) => {
 });
 
 // route to chat from chat.ejs (protected route)
-router.get('/chat', protectRoute, messageView);
+router.get('/chat', protectRoute, (req, res) => {
+    messageView(req, res);
+  });
 
 // Exemple de rendu de la vue avec une variable user
 router.get('/createRoom', protectRoute, createRoomView);

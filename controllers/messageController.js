@@ -2,7 +2,10 @@
 
 const passport = require("passport");
 const Room = require("../models/Room");
+const Message = require("../models/Message");
 const bcrypt = require("bcryptjs");
+// const socket = require("socket.io");
+
 
 const messageView = (req, res) => {
     res.render("chat", {
@@ -58,10 +61,37 @@ const createRoom = async (room) => {
             // res.status(500).send("Error creating room");
         }
     };
+
+const enregistrerMessage = async (message, __createdtime__, room, username) => {
+
+        try {
+        //récupérer user depuis la bdd
+        
+        
+
+            // Création du nouveau message
+            const newMessage = new Message({
+                content: message,
+                user: username,
+                __createdtime__,
+                room,
+            });
+    
+            // Sauvegarde du message dans la base de données
+            await newMessage.save();
+            return newMessage;
+    
+        } catch (error) {
+            console.error("Error saving message:", error);
+            // Gérer les erreurs lors de la sauvegarde du message
+            // res.status(500).send("Error saving message");
+        }
+}
        
 
 module.exports = {
     messageView,
     createRoomView,
     createRoom,
+    enregistrerMessage
 };

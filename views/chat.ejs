@@ -1,66 +1,76 @@
 <%- include('layout.ejs'); %>
-<body>
+<!-- Inclure la bibliothèque Socket.IO depuis le CDN -->
+<script src="http://localhost:4111/socket.io/socket.io.js"></script>
 
-    <div id="chat-container">
-        <div id="chat-messages">
-            <!-- Zone pour afficher les messages du chat -->
-        </div>
-        <div id="user-input">
-            <input type="text" id="message-input" placeholder="Type your message...">
-            <button id="send-button">Send</button>
-        </div>
+<div id="chat-container">
+    <div id="chat-messages">
+        <!-- Zone pour afficher les messages du chat -->
     </div>
+    <div>
+        <input
+            placeholder='Message...'
+            id="message-input"
+        />
+        <button class='btn btn-primary' id="send-button">
+            Send Message
+        </button>
+    </div>
+</div>
 
-    <!-- Inclure la bibliothèque Socket.IO depuis le CDN -->
-    <script src="http://localhost:4111/socket.io/socket.io.js"></script>
-    
-    <!-- Inclure ton script JavaScript pour gérer le chat avec Socket.IO -->
-    <script>
-        const socket = io.connect('http://localhost:4111');
+<script>
+    const socket = io.connect('http://localhost:4111');
 
-        // Récupérer les éléments DOM
-        const messageContainer = document.getElementById('chat-messages'); // changer 'message-container' à 'chat-messages'
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
+    const messagesReceived = []; // Ajout de la déclaration
+    const messageInput = document.getElementById('message-input'); // Assurez-vous que message-input est correctement défini dans votre HTML
+    const chatMessagesContainer = document.getElementById('chat-messages');
 
-        // Écouter l'événement 'connection' côté client
-        socket.on('connect', () => {
-            console.log('Connected to server');
+    // récupérer la room depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const room = urlParams.get('room');
+
+    // make a variable username from req.session.user.name
+    const username = '<%= user.name %>';
+
+    // Fonction pour ajouter un message à la div de messages
+    function addMessageToContainer(message) {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = `${message.username}: ${message.message}`;
+        chatMessagesContainer.appendChild(messageElement);
+    }
+
+    socket.on('enterRoom', (data) => {
+        console.log('Entered room message', data);
+        messagesReceived.push({
+            message: data.message,
+            username: data.username,
+            __createdtime__: data.__createdtime__,
         });
 
-        // Écouter l'événement 'disconnect' côté client
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
+    // Appeler la fonction pour ajouter le nouveau message à l'interface utilisateur
+        addMessageToContainer(data);
+    });
+
+    socket.on('receive_message', (data) => {
+        console.log('Received message', data);
+        messagesReceived.push({
+            message: data.message,
+            username: data.username,
+            __createdtime__: data.__createdtime__,
         });
 
-        // Fonction pour ajouter un message à la div de messages
-        function addMessageToContainer(message) {
-            const messageElement = document.createElement('div');
-            messageElement.textContent = message;
-            messageContainer.appendChild(messageElement);
+        // Appeler la fonction pour ajouter le nouveau message à l'interface utilisateur
+        addMessageToContainer(data);
+    });
+
+
+    document.querySelector('#send-button').addEventListener('click', sendMessage);
+
+    function sendMessage() {
+        const message = messageInput.value;
+        if (message.trim() !== '') {
+            const __createdtime__ = Date.now();
+            socket.emit('send_message', { message, __createdtime__, room, username });
+            messageInput.value = ''; // Effacer le champ de saisie
         }
-
-        // Fonction pour envoyer un message
-        function sendMessage() {
-            const message = messageInput.value;
-            if (message.trim() !== '') {
-                // Envoyer le message au serveur
-                socket.emit('chatMessage', message);
-                // Ajouter le message à la div de messages
-                addMessageToContainer(`You: ${message}`);
-                // Effacer le champ de saisie
-                messageInput.value = '';
-            }
-        }
-
-        // Associer la fonction sendMessage à l'événement click du bouton
-        sendButton.addEventListener('click', sendMessage);
-
-        // Gérer les messages reçus du serveur
-        socket.on('chatMessage', (message) => {
-            // Ajouter le message à la div de messages
-            addMessageToContainer(`Server: ${message}`);
-        });
-    </script>
-</body>
-</html>
+    }
+</script>

@@ -5,9 +5,49 @@
     </div>
     <div class="row justify-content-center">
         <a href="/createRoom">Créer une nouvelle conversation</a>
-</div>
-<div>
-    <a href="/logout"> <button type="submit" class="btn btn-primary btn-lg btn-block login-button">Logout</button> </a>
+    </div>
+    <div>
+        <a href="/logout">
+            <button type="submit" class="btn btn-primary btn-lg btn-block login-button">Logout</button>
+        </a>
+    </div>
+
+    <div class="row justify-content-center mt-3">
+        <h4>Liste des conversations :</h4>
+        <ul>
+            <% rooms.forEach(room => { %>
+                <li>
+                    <%= room.name %> 
+                    (<a href="#" class="join-room" data-room="<%= room.id %>">Join</a>)
+                </li>
+            <% }); %>
+        </ul>
+    </div>
+
+    <!-- Inclure la bibliothèque Socket.IO depuis le CDN -->
+    <script src="http://localhost:4111/socket.io/socket.io.js"></script>
+    
+    <!-- Inclure ton script JavaScript pour gérer le chat avec Socket.IO -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io.connect('http://localhost:4111');
+
+            // Ajoutez un écouteur d'événements sur les liens de rejoindre une salle
+            const joinRoomLinks = document.querySelectorAll('.join-room');
+            joinRoomLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const roomId = link.getAttribute('data-room');
+
+                    // Émettre un événement 'joinRoom' avec l'ID de la salle
+                    socket.emit('enterRoom', { room: roomId });
+
+                    // Rediriger vers la page de chat avec l'ID de la salle
+                    window.location.href = `/chat?room=${roomId}`;
+                });
+            });
+        });
+    </script>
 </div>
 </body>
 </html>
