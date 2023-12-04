@@ -8,8 +8,19 @@ const bcrypt = require("bcryptjs");
 
 
 const messageView = (req, res) => {
-    res.render("chat", {
-        user: req.user
+    Message.find({ room: req.query.room })
+      .sort({ __createdtime__: 1 })
+      .then((messages) => {
+        console.log(messages);
+        res.render("chat", {
+          user: req.user,
+          messages: messages,
+        });
+      })
+      .catch((error) => {
+        console.error("Error retrieving messages:", error);
+        // Gérer les erreurs lors de la récupération des messages
+        // res.status(500).send("Error retrieving messages");
       });
     };
 

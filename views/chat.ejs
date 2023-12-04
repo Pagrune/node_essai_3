@@ -1,10 +1,16 @@
 <%- include('layout.ejs'); %>
-<!-- Inclure la bibliothèque Socket.IO depuis le CDN -->
+<!-- Include the Socket.IO library from the CDN -->
 <script src="http://localhost:4111/socket.io/socket.io.js"></script>
 
 <div id="chat-container">
     <div id="chat-messages">
-        <!-- Zone pour afficher les messages du chat -->
+        <!-- Zone to display chat messages -->
+        <% for (let i = 0; i < messages.length; i++) { %>
+            <div>
+                <%= messages[i].timestamp %>
+                <%= messages[i].user %>: <%= messages[i].content %>
+            </div>
+        <% } %>
     </div>
     <div>
         <input
@@ -19,58 +25,61 @@
 
 <script>
     const socket = io.connect('http://localhost:4111');
-
-    const messagesReceived = []; // Ajout de la déclaration
-    const messageInput = document.getElementById('message-input'); // Assurez-vous que message-input est correctement défini dans votre HTML
     const chatMessagesContainer = document.getElementById('chat-messages');
-
-    // récupérer la room depuis l'URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const room = urlParams.get('room');
-
-    // make a variable username from req.session.user.name
+    const messageInput = document.getElementById('message-input');
+    const room = new URLSearchParams(window.location.search).get('room');
     const username = '<%= user.name %>';
+    const messagesReceived = [];
+    
 
-    // Fonction pour ajouter un message à la div de messages
+    // Function to add a message to the messages container
     function addMessageToContainer(message) {
         const messageElement = document.createElement('div');
+        const messageDateElement = document.createElement('div');
+
+        // Set the content of the message element
         messageElement.textContent = `${message.username}: ${message.message}`;
+
+        // Set the content of the date element
+        const messageDate = new Date(message.__createdtime__).toLocaleString();
+        messageDateElement.textContent = messageDate;
+
+        // Append both elements to the chatMessagesContainer
+        chatMessagesContainer.appendChild(messageDateElement);
         chatMessagesContainer.appendChild(messageElement);
     }
 
-    socket.on('enterRoom', (data) => {
-        console.log('Entered room message', data);
-        messagesReceived.push({
-            message: data.message,
-            username: data.username,
-            __createdtime__: data.__createdtime__,
-        });
-
-    // Appeler la fonction pour ajouter le nouveau message à l'interface utilisateur
-        addMessageToContainer(data);
+    // Event listener when the DOM content is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        // Emit 'enterRoom' event with the room ID
+        socket.emit('enterRoom', { room });
     });
 
+    // Event listener for the 'receive_message' event
     socket.on('receive_message', (data) => {
-        console.log('Received message', data);
+        console.log(data);
+
+        // Add the message to the list of received messages
         messagesReceived.push({
             message: data.message,
             username: data.username,
             __createdtime__: data.__createdtime__,
         });
 
-        // Appeler la fonction pour ajouter le nouveau message à l'interface utilisateur
+        // Call the function to add the new message to the user interface
         addMessageToContainer(data);
     });
 
-
+    // Event listener for the 'send_button' click
     document.querySelector('#send-button').addEventListener('click', sendMessage);
 
+    // Function to send a message to the server
     function sendMessage() {
         const message = messageInput.value;
         if (message.trim() !== '') {
             const __createdtime__ = Date.now();
             socket.emit('send_message', { message, __createdtime__, room, username });
-            messageInput.value = ''; // Effacer le champ de saisie
+            messageInput.value = ''; // Clear the input field
         }
     }
 </script>

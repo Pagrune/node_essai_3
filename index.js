@@ -58,43 +58,11 @@ io.on('connection', (socket) => {
   // const user = socket.request.user;
   // console.log('info user', user);
 
-  socket.on('joinRoom', async (roomInfo) => {
+  socket.on('createRoom', async (roomInfo) => {
     try {
       const { room } = roomInfo;
       const roomId = await createRoom(room);
-
-      socket.join(roomId);
-
-      // Émettre un événement pour indiquer que la room a été rejointe avec succès
-      // socket.emit('roomJoined', { room: roomId });
-
-      // Serveur
-      // socket.on('chatMessage', async (data) => {
-      //   try {
-      //     const username = socket.request.user.username;
-      
-      //     socket.to(roomId).emit('receive_message', {
-      //       message: `${username} has joined the chat room`,
-      //       username: CHAT_BOT,
-      //       __createdtime__: Date.now(),
-          // });
-      
-          socket.emit('receive_message', {
-            message: `Welcome ${username}`,
-            username: CHAT_BOT,
-            __createdtime__: Date.now(),
-          });
-      
-          // const { user, content } = data;
-          // const newMessage = new Message({ room: roomId, user, content });
-          // await newMessage.save();
-      
-          // io.to(roomId).emit('chatMessage', newMessage);
-      
-      //   } catch (error) {
-      //     console.error(error);
-      //   }
-      // });
+   
 
       socket.on('disconnect', () => {
         console.log('User disconnected');
@@ -106,40 +74,53 @@ io.on('connection', (socket) => {
 
   socket.on('enterRoom', async (data) => {
     try {
-        const { room: roomId } = data;
-        console.log('room', typeof roomId);
-        console.log(socket.join(roomId));
+        const { room } = data;
+        socket.join(room);
 
+        const CHAT_BOT = 'ChatBot';
+        let __createdtime__ = Date.now();
+
+        // Send welcome message to the user that just joined the chat
         socket.emit('receive_message', {
-          message: `Welcome to room ${roomId}`,
-          username: 'Admin',
-          __createdtime__: Date.now(),
+            message: `Welcome to the chat room`,
+            username: CHAT_BOT,
+            __createdtime__,
         });
 
-        console.log(`User entered room ${roomId}`);
+        console.log(`User entered room ${room}`);
     } catch (error) {
         console.error('Error entering room:', error);
     }
   });
 
-  
-
   socket.on('send_message', (data) => {
-    try {
-      console.log(data);
-      const { message, __createdtime__, room, username } = data; 
-      console.log('room', room);    
+      try {
+          console.log(data);
+          const { message, __createdtime__, room, username } = data;
 
-      io.in(room).emit('receive_message', { ...data, room });
-      enregistrerMessage(message, __createdtime__, room, username)
-        .then((response) => console.log(response))
-        .catch((err) => console.log(err));
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
+          // Broadcast the message to everyone in the room
+          io.to(room).emit('receive_message', { ...data, room });
+
+          enregistrerMessage(message, __createdtime__, room, username)
+              .then((response) => console.log(response))
+              .catch((err) => console.log(err));
+      } catch (error) {
+          console.error('Error sending message:', error);
+      }
   });
 });
 
+// Function to retrieve previous messages from the database
+async function getPreviousMessages(room) {
+try {
+    // Use Mongoose or your preferred database library to query for messages
+    const messages = await Message.find({ room: room }).sort({ __createdtime__: 1 });
+    return messages;
+} catch (error) {
+    console.error('Error retrieving previous messages:', error);
+    return [];
+}
+}
 
 
 

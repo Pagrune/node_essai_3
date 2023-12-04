@@ -25,13 +25,10 @@
                 const room = document.getElementById('room-name').value;
 
                 // Émettre un événement 'joinRoom' avec le nom de la room
-                socket.emit('joinRoom', { room });
+                socket.emit('createRoom', { room });
 
-                // Écouter l'événement 'roomJoined' côté client
-                socket.on('roomJoined', (data) => {
-                    // Rediriger vers la page de chat après avoir rejoint la room
-                    window.location.href = `/chat?room=${data.room}`;
-                });
+                // Rediriger l'utilisateur vers la page de chat
+                window.location.href = `/dashboard`;
             });
         });
     </script>

@@ -37,13 +37,13 @@
             joinRoomLinks.forEach(link => {
                 link.addEventListener('click', (event) => {
                     event.preventDefault();
-                    const roomId = link.getAttribute('data-room');
+                    const room = link.getAttribute('data-room');
 
-                    // Émettre un événement 'joinRoom' avec l'ID de la salle
-                    socket.emit('enterRoom', { room: roomId });
+                    // // Émettre un événement 'joinRoom' avec l'ID de la salle
+                    // socket.emit('enterRoom', { room });
 
                     // Rediriger vers la page de chat avec l'ID de la salle
-                    window.location.href = `/chat?room=${roomId}`;
+                    window.location.href = `/chat?room=${room}`;
                 });
             });
         });
